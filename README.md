@@ -10,3 +10,12 @@ Course Project on 'Predicting the Impact of a Scientific Paper'
 ├── sample-dir/         		# sample description
 └── README.md
 ```
+
+## Getting Started
+Install `conda` distribution for managing python packages. Create an environment:
+```bash
+$ conda create -n myenv python=3.9
+```
+Then install the following dependencies:
+* Install common packages: `$ conda install -c anaconda pandas numpy seaborn tqdm requests pyopenssl idna`,
+* Install sklearn: `$ conda install -c conda-forge loguru`,
