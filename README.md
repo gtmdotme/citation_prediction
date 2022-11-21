@@ -12,6 +12,8 @@ Course Project on 'Predicting the Impact of a Scientific Paper'
 ├── data-modeling.ipynb         # code for modeling `citation prediction`
 ├── parser.py                   # helper functions for parsing various data entities
 ├── scraper.py                  # helper functions for scraping data from OpenAlexAPI
+├── .gitignore
+├── LICENSE
 └── README.md
 ```
 
