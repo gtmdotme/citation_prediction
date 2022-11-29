@@ -30,7 +30,7 @@ $ conda create -n myenv python=3.9
 Then install the following dependencies:
 * Install common packages: 
 ```bash
-$ conda install -c anaconda pandas numpy scikit-learn xgboost seaborn tqdm requests pyopenssl idna
+$ conda install -c anaconda pandas numpy scikit-learn xgboost seaborn tqdm requests pyopenssl idna gensim
 ```
 * Install logger: 
 ```bash

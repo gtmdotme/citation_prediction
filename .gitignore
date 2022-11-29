@@ -9,6 +9,7 @@ dump
 data
 data.*.txt
 log.*.txt
+*.model
 
 
 # Byte-compiled / optimized / DLL files

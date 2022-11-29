@@ -51,7 +51,7 @@ def author_parser(authors):
     for author in authors:
         processed_authors.append({
             'id': get_id(author['id']),
-            'orchid': author['orcid'],
+            'orcid': author['orcid'],
             'display_name': author['display_name'],
             'works_count': author['works_count'],
             'cited_by_count': author['cited_by_count'],
