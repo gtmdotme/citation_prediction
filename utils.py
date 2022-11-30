@@ -58,11 +58,14 @@ def preprocess_works(works, from_year, to_year):
     work related preprocessing
     '''
     # remove duplicate works (based on index 'id')
-    works = works.reset_index().drop_duplicates(['id']).set_index('id')
+    if works.index.nunique() < len(works):
+        print ('works: removing duplicates')
+        works = works.reset_index().drop_duplicates(['id']).set_index('id')
 
-    # convert string to dicts/lists
-    for col in ['authorships', 'concepts', 'referenced_works', 'counts_by_year']:
-        works[col] = works[col].map(ast.literal_eval)
+    # if reading from csv, uncomment following code:
+    # # convert string to dicts/lists
+    # for col in ['authorships', 'concepts', 'referenced_works', 'counts_by_year']:
+    #     works[col] = works[col].map(ast.literal_eval)
 
     works['counts_by_year'] = works['counts_by_year'].map(
         lambda x: preprocess_counts_by_year(x, from_year, to_year)
@@ -74,6 +77,57 @@ def preprocess_works(works, from_year, to_year):
         lambda x: np.sum(lasts(x))) == works['cited_by_count']]
 
     return works
+
+
+def preprocess_authors(authors): 
+    '''
+    author related preprocessing
+    '''
+    # remove duplicate authors (based on index 'id')
+    if authors.index.nunique() < len(authors):
+        print ('authors: removing duplicates')
+        authors = authors.reset_index().drop_duplicates(['id']).set_index('id')
+
+    # if reading from csv, uncomment following code:
+    # # convert string to dicts/lists
+    # for col in ['concepts', 'counts_by_year']:
+    #     authors[col] = authors[col].map(ast.literal_eval)
+
+    return authors
+
+
+def preprocess_venues(venues): 
+    '''
+    venues related preprocessing
+    '''
+    # remove duplicate venues (based on index 'id')
+    if venues.index.nunique() < len(venues):
+        print ('venues: removing duplicates')
+        venues = venues.reset_index().drop_duplicates(['id']).set_index('id')
+
+    # if reading from csv, uncomment following code:
+    # # convert string to dicts/lists
+    # for col in ['concepts', 'counts_by_year']:
+    #     venues[col] = venues[col].map(ast.literal_eval)
+
+    return venues
+
+
+def preprocess_insts(insts): 
+    '''
+    institution related preprocessing
+    '''
+    # remove duplicate insts (based on index 'id')
+    if insts.index.nunique() < len(insts):
+        print ('insts: removing duplicates')
+        insts = insts.reset_index().drop_duplicates(['id']).set_index('id')
+
+    # if reading from csv, uncomment following code:
+    # # convert string to dicts/lists
+    # for col in ['associated_institutions', 'concepts', 'counts_by_year']:
+    #     insts[col] = insts[col].map(ast.literal_eval)
+
+    return insts
 
 
 def print_metric(metric_name, metric_list):
