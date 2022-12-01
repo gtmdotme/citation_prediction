@@ -32,7 +32,7 @@ Then install the following dependencies:
 ```bash
 $ conda install -c anaconda pandas numpy scikit-learn xgboost seaborn tqdm requests pyopenssl idna gensim
 ```
-* Install logger: 
+* Install logger, wordcloud: 
 ```bash
-$ conda install -c conda-forge loguru
+$ conda install -c conda-forge loguru wordcloud
 ```
