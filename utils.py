@@ -1,8 +1,26 @@
+# basic
+import sys
+import os
+import json
+import ast
+import time
+import requests
+from tqdm import tqdm
+from collections import Counter, defaultdict, namedtuple
+
+# debug
+import pdb
+from loguru import logger
+
 import numpy as np
 import pandas as pd
-import pdb
-import ast
-import os
+
+# sklearn
+from sklearn import metrics
+from sklearn.mixture import GaussianMixture
+
+# custom
+from utils import *
 
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from nltk.tokenize import word_tokenize
@@ -116,6 +134,91 @@ def preprocess_data(works, from_year, to_year, authors, venues, insts):
 
     return works, authors, venues, insts
 
+## feature engineering related utils
+def bin_citations(x, n_clusters, seed):
+    x = x.to_numpy().reshape(-1, 1)
+    gmm = GaussianMixture(n_components=n_clusters, max_iter=1000, random_state=seed)
+    labels = gmm.fit(x).predict(x)
+    return labels
+
+def count_prior_citations(counts_by_year, YEAR):
+    '''
+    `counts_by_year` is a list of tuple (year, #works, #citations)
+    '''
+    counts = [i[2] for i in counts_by_year if i[0]<YEAR]
+    if len(counts):
+        return np.sum(counts)
+    return 0
+
+def count_prior_works(counts_by_year, YEAR):
+    '''
+    `counts_by_year` is a list of tuple (year, #works, #citations)
+    '''
+    counts = [i[1] for i in counts_by_year if i[0]<YEAR]
+    if len(counts):
+        return np.sum(counts)
+    return 0
+
+def get_features(works, authors, venues, insts, YEAR, N_CLASSES, seed):
+    '''
+    Feature generate given the data for both regression and classification
+    '''
+    df = pd.DataFrame()
+
+    # `WORK`: Paper meta-data features
+    df['no_of_authors'] = works['authorships'].map(lambda x: len(x))
+    df['no_of_referenced_works'] = works['referenced_works'].map(len)
+    df['open_access_is_oa'] = works['open_access_is_oa']
+    df['publication_month'] = works['publication_date'].map(lambda x: int(x.split('-')[1]))
+
+    
+    # `AUTHOR`: Author-specific Features
+    authors['prior_citations'] = authors['counts_by_year'].map(lambda x: count_prior_citations(x, YEAR))
+    a_prior_citations_dict = defaultdict(lambda: 0, authors['prior_citations'].to_dict())
+    threshold = authors['prior_citations'].mean()
+    df['author_prominency'] = works['authorships'].map(
+        lambda x: 1 if max([a_prior_citations_dict[i[0]] for i in x]) >= threshold else 0)
+    df['authors_mean_citations'] = works['authorships'].map(lambda x: np.mean([a_prior_citations_dict[i[0]] for i in x]))
+    
+    authors['prior_works'] = authors['counts_by_year'].map(lambda x: count_prior_works(x, YEAR))
+    a_prior_works_dict = defaultdict(lambda: 0, authors['prior_works'].to_dict())
+    df['authors_mean_works'] = works['authorships'].map(lambda x: np.mean([a_prior_works_dict[i[0]] for i in x]))
+
+    
+    # `VENUE`: Journal and Publisher relevant features
+    venues['prior_citations'] = venues['counts_by_year'].map(lambda x: count_prior_citations(x, YEAR))
+    v_prior_citations_dict = defaultdict(lambda: 0, venues['prior_citations'].to_dict())
+    df['venue_citations'] = works['host_venue'].map(lambda x: v_prior_citations_dict[x])
+    
+    venues['prior_works'] = venues['counts_by_year'].map(lambda x: count_prior_works(x, YEAR))
+    v_prior_works_dict = defaultdict(lambda: 0, venues['prior_works'].to_dict())
+    df['venue_works'] = works['host_venue'].map(lambda x: v_prior_works_dict[x])
+    
+    df['venue_significance'] = works['host_venue'].map(
+        lambda x: v_prior_citations_dict[x]/v_prior_works_dict[x] if v_prior_works_dict[x] else 0)
+    
+
+    # `INSTITUTION`: Insti-specific Features
+    insts['prior_citations'] = insts['counts_by_year'].map(lambda x: count_prior_citations(x, YEAR))
+    i_prior_citations_dict = defaultdict(lambda: 0, insts['prior_citations'].to_dict())
+    df['insts_mean_citations'] = works['authorships'].map(
+        lambda x: np.mean([i_prior_citations_dict[i[1][0]] for i in x if len(i[1])>0]))
+    
+    insts['prior_works'] = insts['counts_by_year'].map(lambda x: count_prior_works(x, YEAR))
+    i_prior_works_dict = defaultdict(lambda: 0, insts['works_count'].to_dict())
+    df['insts_mean_works'] = works['authorships'].map(lambda x: np.mean([i_prior_works_dict[i[1][0]] for i in x if len(i[1])>0]))    
+    
+    # TODO: needs to be corrected
+    df.fillna(0, inplace=True)
+    
+    # target variable - regression
+    ## cumulative citation count
+    df['y_reg'] = works['counts_by_year'].map(lambda x: np.sum([v for k, v in x if k in [YEAR, YEAR+1, YEAR+2]]))
+    
+    # target variable - classification
+    df['y_clf'] = bin_citations(df['y_reg'], n_clusters=N_CLASSES, seed=seed)
+    
+    return df
 
 
 def print_metric(metric_name, metric_list):
@@ -124,6 +227,7 @@ def print_metric(metric_name, metric_list):
     return
 
 
+## doc2vec related utils
 def train_doc2vec(docs, dims=16, saved_model_name='d2v.model'):
     '''
     Training Doc2Vec on custom docs and saving model file
