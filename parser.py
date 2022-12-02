@@ -9,6 +9,25 @@
 # import pdb
 # from loguru import logger
 
+# parser for `Concepts`
+def concept_parser(authors):
+    processed_authors = []
+    for author in authors:
+        processed_authors.append({
+            'id': get_id(author['id']),
+            'wikidata': author['wikidata'],
+            'level': author['level'],
+            'description': author['description'],
+            'display_name': author['display_name'],
+            'works_count': author['works_count'],
+            'cited_by_count': author['cited_by_count'],
+            'ancestors': [get_id(i['id']) for i in author['ancestors']],
+            'related_concepts': parse_concepts(author['related_concepts'], 10),
+            'counts_by_year': parse_author_counts_by_year(author['counts_by_year']),
+            'created_date': author['created_date'],
+        })
+    return processed_authors
+
 # parser for `Venues`
 def venue_parser(authors):
     processed_authors = []
