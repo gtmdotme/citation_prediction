@@ -214,6 +214,9 @@ def get_features(works, authors, venues, insts, YEAR, N_CLASSES, seed):
     # target variable - regression
     ## cumulative citation count
     df['y_reg'] = works['counts_by_year'].map(lambda x: np.sum([v for k, v in x if k in [YEAR, YEAR+1, YEAR+2]]))
+    # normalizing target variable
+    elapsed_months = 2*12 + 12-df['publication_month']
+    df['y_reg_norm'] = df['y_reg']/elapsed_months
     
     # target variable - classification
     df['y_clf'] = bin_citations(df['y_reg'], n_clusters=N_CLASSES, seed=seed)
