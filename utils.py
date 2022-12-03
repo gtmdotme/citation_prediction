@@ -242,9 +242,7 @@ def train_doc2vec(docs, dims=16, saved_model_name='d2v.model'):
     
     # model init
     model = Doc2Vec(vector_size=dims,
-                window=3,
-                alpha=alpha, 
-                min_alpha=0.00025,
+                window=4,
                 min_count=1,
                 workers=-1)
     
@@ -263,17 +261,18 @@ def train_doc2vec(docs, dims=16, saved_model_name='d2v.model'):
     return
 
 
-def abstract_feats(df, works, dims=16, saved_model='d2v.model'):
-    # TODO: needs to be tested
+def infer_doc2vec(works, col, indices, dims=16, saved_model='d2v.model'):
+    '''
+    Infering from Doc2Vec on custom indices of data
     # ref: https://medium.com/@mishra.thedeepak/doc2vec-simple-implementation-example-df2afbbfbad5
-    # TEXTUAL Features
-    train_doc2vec(works['abstract'].tolist(), dims)
+    '''
+    df = pd.DataFrame(index=indices)
     model= Doc2Vec.load(saved_model)
-    
-    df[[f'abs_{i}' for i in range(dims)]] = np.zeros((len(df), dims))
-    for idx, i in tqdm(enumerate(works.index[13000:]), 'Inferencing'):
-        df.loc[i,[f'abs_{i}' for i in range(dims)]] = model.infer_vector(
-            word_tokenize(works.loc[i, 'abstract'].lower())
+
+    df[[f'{col}_{i}' for i in range(dims)]] = np.zeros((len(df), dims))
+    for i in tqdm(works.loc[indices].index, 'Inferencing'):
+        df.loc[i,[f'{col}_{i}' for i in range(dims)]] = model.infer_vector(
+            word_tokenize(works.loc[i, col].lower())
         )
 
     return df
