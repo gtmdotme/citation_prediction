@@ -231,7 +231,7 @@ def print_metric(metric_name, metric_list):
 
 
 ## doc2vec related utils
-def train_doc2vec(docs, dims=16, saved_model_name='d2v.model'):
+def train_doc2vec(docs, dims=16, saved_model_name='d2v.model', seed=0):
     '''
     Training Doc2Vec on custom docs and saving model file
     # ref: https://medium.com/@mishra.thedeepak/doc2vec-simple-implementation-example-df2afbbfbad5
@@ -242,9 +242,10 @@ def train_doc2vec(docs, dims=16, saved_model_name='d2v.model'):
     
     # model init
     model = Doc2Vec(vector_size=dims,
-                window=4,
+                window=10,
                 min_count=1,
-                workers=-1)
+                workers=-1, 
+                seed=seed)
     
     # building vocab
     model.build_vocab(tagged_data)
