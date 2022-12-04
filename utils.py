@@ -277,3 +277,20 @@ def infer_doc2vec(works, col, indices, dims=16, saved_model='d2v.model'):
         )
 
     return df
+
+def compute_class_weight(y):
+    # ref: https://github.com/scikit-learn/scikit-learn/blob/f3f51f9b611bf873bd5836748647221480071a87/sklearn/utils/class_weight.py#L10
+    # Find the weight of each class as present in y.
+    classes = np.unique(y)
+    le = LabelEncoder()
+    y_ind = le.fit_transform(y)
+    if not all(np.in1d(classes, le.classes_)):
+        raise ValueError("classes should have valid labels that are in y")
+
+    recip_freq = len(y) / (len(le.classes_) * np.bincount(y_ind).astype(np.float64))
+    weights = recip_freq[le.transform(classes)]
+    
+    assert len(classes) == len(weights), 'oops'
+    weights_dict = dict(zip(classes, weights))#{c: weight[i] for i, c in enumerate(classes)}
+
+    return weights_dict
